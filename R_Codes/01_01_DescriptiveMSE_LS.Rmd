@@ -1,0 +1,103 @@
+---
+title: "01_01_DescriptiveMSE_LS"
+author: "Leticia"
+date: '2023-01-26'
+output: html_document
+---
+
+```{r}
+rm(list = ls())
+Essential=c("agricolae","psych","rlist","rstatix","lme4","car","usefun","tidyverse","PerformanceAnalytics",
+            "corrplot","GGally", "ggplot2","plyr","dplyr")
+Helpful=c("gridExtra","gmodels","lmerTest","multcomp","emmeans","multcompView","nlme","moments","drc")
+library(easypackages)
+libraries(Essential) # Essential Packages
+libraries(Helpful) # Helpful Packages
+source("All_Functions.r") # Installs all useful functions
+```
+```{r}
+ImpHyp <- read.csv("G:/My Drive/Leticia_Santos/Soybeans/Results/Results_paper/RawResultsMSE_007ImpHyp.csv") %>% 
+  mutate(Dataset= "Imputer") %>% 
+  dplyr::select(-"X")
+
+Desc_ImpHyp <- ImpHyp %>%
+  group_by(Method) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(MSE),
+            sd = sd(MSE),
+            med=median(MSE),
+            min=min(MSE),
+            max=max(MSE)) 
+#write.csv(Desc_ImpHyp,file = "G:/My Drive/Leticia_Santos/Soybeans/Results/Results_paper/DescriptiveResultsMSE_007ImpHyp.csv")
+
+
+leveneTest(ImpHyp$MSE, ImpHyp$Method)
+#pvalue < 0.05 - The data is not homogeneous, reject the null
+t.test(ImpHyp$MSE ~ ImpHyp$Method) 
+# p-value < 2.2e-16 - Means are different, reject null
+```
+
+
+```{r}
+CopHyp <- read.csv("G:/My Drive/Leticia_Santos/Soybeans/Results/Results_paper/RawResultsMSE_005CopHyp.csv") %>%
+  mutate(Dataset= "Copula")%>% 
+  dplyr::select(-"X")
+
+Desc_CopHyp <- CopHyp %>%
+  group_by(Method) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(MSE),
+            sd = sd(MSE),
+            med=median(MSE),
+            min=min(MSE),
+            max=max(MSE),
+            iqr=IQR(MSE))
+ 
+#write.csv(Desc_CopHyp,file = "G:/My Drive/Leticia_Santos/Soybeans/Results/Results_paper/DescriptiveResultsMSE_005CopHyp.csv")
+
+leveneTest(CopHyp$MSE, CopHyp$Method)
+#pvalue > 0.05 - The data is homogeneous (equal variance), can not reject the null
+t.test(CopHyp$MSE ~ CopHyp$Method, var.equal=TRUE) 
+# p-value < 2.2e-16 - Means are different, reject null
+
+
+
+```
+
+
+```{r}
+df <- rbind(CopHyp, ImpHyp)
+p1 <- ggplot(df, aes(x = Dataset, y = MSE, fill=Method)) + 
+  scale_fill_manual(values = c("#56B4E9", "#009E73"))+
+  geom_boxplot()+
+  geom_text(aes(y=mean(MSE), label= "*", fontface = "bold"), 
+             vjust=-3,
+             color = "#D55E00",
+             size=10)+
+  stat_boxplot(geom = 'errorbar')+
+  
+  #ggsave("../output/spectral_behavior_boxplot.png", dpi=900, width = 5, height = 5)
+  #stat_summary(fun=mean, geom="line",group=1)  + 
+  stat_summary(fun=mean, geom="point",colour="#CC79A7",shape=18, size=3,show.legend = T, position=position_dodge(0.75))+
+  labs(x="Data set generation method",y="MSE")+
+  theme_bw()+theme(legend.position = c(0.15, 0.85),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        legend.box.background = element_rect(color="black"),
+        legend.box.margin = margin(2, 2, 2, 2),
+text = element_text(family = "Times New Roman", size=12))+ labs(fill = "Prediction method")
+  ggsave("../../Results/Results_paper/Ttest_boxplot.png", dpi=900, width = 7, height = 5)
+
+
+p1
+```
+
+ggplot(mpg, aes(displ, hwy, col = class)) + 
+geom_point(size = 2,aes(shape = factor(cyl))) +
+theme(legend.box.background = element_rect(color = "red",fill = "grey"),
+legend.box.margin = margin(0.4,0.4,0.4,0.4,"cm"),legend.background = element_rect(color = "yellow")) 
+
+
++ guides(shape = guide_legend(title = "cyl")) + scale_shape_discrete(labels = c("a","b","c","d")) + theme(legend.position = "bottom", legend.direction = "vertical")
+
+
